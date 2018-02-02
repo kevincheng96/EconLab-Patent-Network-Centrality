@@ -80,7 +80,10 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 
 	# Initialize the list of vectors and matrices
 	num_years = end_year - start_year
+	# Vector keeps track of how many patents cited each category over the next num_years
 	vectors = [np.zeros((n, 1)) for i in range(num_years)] # Create an Nx1 vector
+	# Adjacency matrix keeps track of which categories cited which categories (directed graph)
+	# (row i, col j) = category at row i points to (cited) category at column j
 	matrices = [np.zeros((n, n)) for i in range(num_years)] # Create an NxN adjacency matrix
 
 	# Find all csv files in cit_received directory
@@ -133,15 +136,13 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 						elif cit_fyear - fyear  - 1 > fyear_gap or cit_fyear - fyear <= 0:
 							continue
 						else:
-							# Add entry to vector
+							# Add entry to vector saying that another patent has cited category j
 							vectors[i][j] += 1
 							# Add entry into adjacency matrix
 							k = cat_dict[cit_cat] # adj matrix index for the category of patent that cited this patent
-							if j == k:
-								matrices[i][j,k] += 1 # add 1 to the (j,k) element of the ith matrix
-							else:
-								matrices[i][j,k] += 1
-								matrices[i][k,j] += 1
+							# A directed edge goes from category k (citing patent) to category j (cited patent) in time i
+							matrices[i][k,j] += 1
+
 	# Save vectors and matrices into serialized files
 	print 'dumping vectors'
 	with open('vectors.msgpack', 'wb') as f:

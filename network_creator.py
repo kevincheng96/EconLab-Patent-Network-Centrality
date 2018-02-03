@@ -81,10 +81,10 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 	# Initialize the list of vectors and matrices
 	num_years = end_year - start_year
 	# Vector keeps track of how many patents cited each category over the next num_years
-	vectors = [np.zeros((n, 1)) for i in range(num_years)] # Create an Nx1 vector
+	vectors = [np.zeros((n, 1)) for i in range(num_years)] # Create an Nx1 vector for each year
 	# Adjacency matrix keeps track of which categories cited which categories (directed graph)
 	# (row i, col j) = category at row i points to (cited) category at column j
-	matrices = [np.zeros((n, n)) for i in range(num_years)] # Create an NxN adjacency matrix
+	matrices = [np.zeros((n, n)) for i in range(num_years)] # Create an NxN adjacency matrix for each year
 
 	# Find all csv files in cit_received directory
 	files = [file for file in os.listdir('./data/cit_received') if file.endswith(".csv")]

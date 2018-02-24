@@ -27,7 +27,7 @@ def retrieve_patent_data():
 	else:
 		# Get the filing year for each patent
 		df = pd.read_csv('./data/patents_fyear_iyear.csv')
-		fyears = df[['patnum','fyear']] # Dataframe containing two columns: patnum and fyear
+		fyears = df[['patnum','fyear','iyear']] # Dataframe containing three columns: patnum, fyear, and iyear
 		fyears.set_index('patnum')
 		print 'loaded first'
 
@@ -40,13 +40,13 @@ def retrieve_patent_data():
 		print 'loaded second'
 
 		# Join the two dataframes together 
-		# Format = patnum fyear main_uspto
+		# Format = patnum fyear iyear main_uspto
 		print 'joining'
 		patents = fyears.merge(categories)
 		print patents
 		print patents.shape
 
-		# Convert dataframe into a dictionary of format: {patnum: {fyear: int, main_uspto: int}}
+		# Convert dataframe into a dictionary of format: {patnum: {fyear: int, iyear: int, main_uspto: int}}
 		patents.set_index('patnum', drop=True, inplace=True)
 		print 'set index'
 		d = patents.to_dict(orient='index')
@@ -57,7 +57,9 @@ def retrieve_patent_data():
 			print 'still dumping'
 			msgpack.pack(d, f)
 		print 'done dumping'
-	return d
+		patents = d
+
+	return patents
 
 # Create network category dictionary: {main_uspto: index of category in adj matrix}
 def create_uspto_dict(patents):
@@ -120,9 +122,13 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 			# Iterate through each patent in the file and all the patents that cite it
 			for patnum, row in df.iterrows():
 				fyear, uspto = patents[patnum]['fyear'], patents[patnum]['main_uspto']
-				# If fyear is NaN, just skip this entry
+				# If fyear is NaN, use the iyear instead
 				if pd.isnull(fyear):
-					continue
+					iyear = patents[patnum]['iyear']
+					if not pd.isnull(iyear):
+						fyear = int(iyear)
+					else:
+						continue
 				else:
 					fyear = int(fyear)
 				i = fyear - start_year # index of this year's matrix inside the adj_matrices list
@@ -136,9 +142,15 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 						break
 					else:
 						cit_fyear, cit_uspto = patents[cit_by]['fyear'], patents[cit_by]['main_uspto']
-						# If the fyear for this citing patent is null, skip it
+						# If the fyear for this citing patent is null, use iyear instead
 						if pd.isnull(cit_fyear):
-							continue
+							cit_iyear = patents[cit_by]['iyear']
+							if not pd.isnull(cit_iyear):
+								cit_fyear = int(cit_iyear)
+							else:
+								continue
+						else:
+							cit_fyear = int(cit_fyear)
 						# If citing patent is filed more than fyear_gap years after the cited patent, ignore
 						elif cit_fyear - fyear  - 1 > fyear_gap or cit_fyear - fyear <= 0:
 							continue
@@ -184,7 +196,7 @@ def apply_crosswalk(num_classes):
 	# Construct a dictionary for the crosswalk that maps each uspto to an ipc
 	cw_dict = {}
 	for i, row in cw.iterrows():
-		uspto, ipc = row['uspto'], row['ipc']
+		uspto, ipc = str(row['uspto']), str(row['ipc'])
 		cw_dict[uspto] = ipc
 
 	# Construct a dictionary for ipc that maps each ipc value to its index value in the new matrices and vectors
@@ -192,7 +204,7 @@ def apply_crosswalk(num_classes):
 	ipc_dict = {} # Dictionary mapping each ipc to its index value in adjacency matrix
 
 	for i, row in cw.iterrows():
-		ipcs.add(row['ipc'])
+		ipcs.add(str(row['ipc']))
 
 	counter = 0
 	for item in ipcs:
@@ -204,14 +216,16 @@ def apply_crosswalk(num_classes):
 	ipc_vectors = [np.zeros((n, 1)) for i in range(len(uspto_vectors))] # Create an Nx1 vector for each year
 	ipc_matrices = [np.zeros((n, n)) for i in range(len(uspto_matrices))] # Create an NxN adjacency matrix for each year
 	reverse_uspto_dict = {v: k for k, v in uspto_dict.iteritems()} # Dictionary mapping each index value to a uspto class (inverse of uspto_dict)
+
 	# Construct each matrix/vector year by year
 	for i in range(len(uspto_matrices)): # i is index for each year
 		for j in range(len(uspto_matrices[i])): # j is index for each category within each year
 			# Want to find the uspto for each index in the original matrix, then map that to a ipc using the cw_dict
 			# Then, transfer that value to the ipc_matrices/vectors by finding the ipc's index in ipc_dict
 			uspto = reverse_uspto_dict[j]
-			print uspto
-			ipc = cw_dict[uspto]
+			# Skip current patent if it has a fault id
+			if uspto not in cw_dict:
+				continue
 			ipc_index = ipc_dict[ipc]
 
 			# Transfer value from uspto_matrix/vector to ifc_matrix/vector
@@ -219,9 +233,14 @@ def apply_crosswalk(num_classes):
 			# Loop through each column k in row j of this matrix
 			for k in range(len(uspto_matrices[i][j])):
 				uspto_2 = reverse_uspto_dict[k]
-				ipc_2 = cw_dict[uspto_2]
+				# Skip current patent if it has a fault id
+				if uspto_2 not in cw_dict:
+					continue
 				ipc_index_2 = ipc_dict[ipc_2]
 				ipc_matrices[i][ipc_index, ipc_index_2] += uspto_matrices[i][j, k]
+
+	print not_in_cw
+	return
 
 	# Save vectors and matrices into serialized files
 	with open('ipc_vectors.msgpack', 'wb') as f:
@@ -245,3 +264,11 @@ apply_crosswalk(num_classes)
 # TODO:
 # -Disregard entries with non integer uspto values
 # 	-Preferably drop this in retrieve_patent_data
+# -Make sure all uspto and ipc are strings
+# -Drop uspto values that don't appear in crosswalk?
+
+# if fyear is missing, use iyear (Done)
+# crosswalk, skip over bad uspto numbers (Done)
+# create 5 year aggregate (Done, but need to use this separate function in calculate_eigenvectors)
+# run eigenvector centrality measure on these aggregates and save output (year, ranked categories, centrality measure)
+# heat map, category web

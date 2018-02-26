@@ -21,7 +21,7 @@ end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
 network_to_load = 'uspto' # uspto or ipc
-aggregate_years = 5 # number of years of data in each matrix/vector
+years_per_aggregate = 5 # number of years of data in each matrix/vector
 
 # Loads the vectors and adjacency matrixes
 def load_network(network_to_load):
@@ -79,24 +79,32 @@ def calculate_degrees(adj_matrices, vectors):
 # Calculate the eigenvector centrality for the network
 def calculate_eigenvector_centrality(adj_matrices):
 	# List to be populated with centrality measures for each year
+	rankings_by_year = []
 
-	# Loop through each year
-	# for year, matrix in enumerate(adj_matrices):
-	# 	# Create a networkx multi directed graph
-	# 	G = nx.from_numpy_matrix(matrix, create_using=nx.MultiDiGraph())
-	# 	# Find eigenvector centrality
-	# 	centrality = nx.eigenvector_centrality_numpy(G, weight='weight')
-	# 	print year
-	# 	print centrality
-	G = nx.from_numpy_matrix(adj_matrices[145], create_using=nx.MultiDiGraph())
-	# Find eigenvector centrality
-	centrality = nx.eigenvector_centrality_numpy(G, weight='weight')
-	print centrality
-	print max(centrality.values())
-	max_centrality_index = max(centrality, key=centrality.get)
-	print max_centrality_index
-	reverse_uspto_dict = {v: k for k, v in cat_dict.iteritems()}
-	print reverse_uspto_dict[max_centrality_index]
+	# Aggregate the years of the matrices together
+	aggregated_matrices = aggregate_years(adj_matrices, years_per_aggregate)
+
+	# Loop through each matrix and calculate the eignvector, then rank each patent by weight
+	for i, matrix in enumerate(aggregated_matrices):
+		curr_year = start_year + i * years_per_aggregate
+		# Convert matrix to a MultiDiGraph
+		G = nx.from_numpy_matrix(matrix, create_using=nx.MultiDiGraph())
+		# Find eigenvector centrality
+		centrality = nx.eigenvector_centrality_numpy(G, weight='weight')
+		# Maps matrix index value to a uspto value
+		reverse_uspto_dict = {v: k for k, v in cat_dict.iteritems()}
+		# Create a list of rankings, where the most central patents are first
+		rankings = [[reverse_uspto_dict[k], v] for k, v in centrality.iteritems()]
+		rankings = sorted(rankings, key = lambda x: x[1])[::-1] # Sort by value
+		# Add to the rankings_by_year array
+		rankings_by_year.append((curr_year, rankings))
+
+	# Save ranking into a serialized file
+	f_name = 'eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
+	with open(f_name, 'wb') as f:
+		msgpack.pack(rankings_by_year, f)
+
+	return rankings_by_year
 
 # Graph the networks for the years of interest
 def graph_network(adj_matrices, start_year, years_of_interest, degrees):

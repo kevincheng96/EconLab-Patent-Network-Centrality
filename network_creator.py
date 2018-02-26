@@ -1,3 +1,5 @@
+#!python2
+
 import pandas as pd
 import numpy as np
 import msgpack
@@ -103,9 +105,9 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 		# Read csv file in chunks (takes too much memory to load all at once)
 		# Only the first csv file has headers
 		if f == 'patents_cit_received_part1.csv':
-			reader = pd.read_csv('./data/cit_received/' + f, chunksize=50)
+			reader = pd.read_csv('./data/cit_received/' + f, chunksize=50, error_bad_lines=False, warn_bad_lines=True)
 		else:
-			reader = pd.read_csv('./data/cit_received/' + f, chunksize=50, header=None)
+			reader = pd.read_csv('./data/cit_received/' + f, chunksize=50, header=None, error_bad_lines=False, warn_bad_lines=True)
 		counter = 0
 		counter1 += 1
 
@@ -149,8 +151,6 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 								cit_fyear = int(cit_iyear)
 							else:
 								continue
-						else:
-							cit_fyear = int(cit_fyear)
 						# If citing patent is filed more than fyear_gap years after the cited patent, ignore
 						elif cit_fyear - fyear  - 1 > fyear_gap or cit_fyear - fyear <= 0:
 							continue
@@ -254,9 +254,9 @@ def apply_crosswalk(num_classes):
 # Define variables
 patents = retrieve_patent_data() # Dictionary of format: {patnum: {fyear: int, main_uspto: int}}
 
-# create_vector_and_matrix(patents, start_year, end_year, year_gap)
+create_vector_and_matrix(patents, start_year, end_year, year_gap)
 
-apply_crosswalk(num_classes)
+# apply_crosswalk(num_classes)
 
 # create_uspto_dict(patents)
 

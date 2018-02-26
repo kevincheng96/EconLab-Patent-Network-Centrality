@@ -1,3 +1,5 @@
+#!python2
+
 import pandas as pd
 import numpy as np
 import msgpack

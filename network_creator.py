@@ -12,7 +12,7 @@ import os
 m.patch()
 
 # Initialize variables
-start_year = 1858 # Default: 1858
+start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 num_classes = 'few' # 'many' = 108 classes, 'few' = 8 main classes
@@ -269,6 +269,6 @@ create_vector_and_matrix(patents, start_year, end_year, year_gap)
 
 # if fyear is missing, use iyear (Done)
 # crosswalk, skip over bad uspto numbers (Done)
-# create 5 year aggregate (Done, but need to use this separate function in calculate_eigenvectors)
-# run eigenvector centrality measure on these aggregates and save output (year, ranked categories, centrality measure)
+# create 5 year aggregate (Done)
+# run eigenvector centrality measure on these aggregates and save output (year, ranked categories, centrality measure) (Dones)
 # heat map, category web

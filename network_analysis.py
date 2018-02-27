@@ -16,7 +16,7 @@ from networkx.drawing.nx_agraph import write_dot
 m.patch()
 
 # Initialize variables
-start_year = 1858 # Default: 1858
+start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
@@ -77,7 +77,7 @@ def calculate_degrees(adj_matrices, vectors):
 	return unnormalized_degrees, normalized_degrees
 
 # Calculate the eigenvector centrality for the network
-def calculate_eigenvector_centrality(adj_matrices):
+def calculate_eigenvector_centrality(adj_matrices, years_per_aggregate):
 	# List to be populated with centrality measures for each year
 	rankings_by_year = []
 
@@ -103,6 +103,7 @@ def calculate_eigenvector_centrality(adj_matrices):
 	f_name = 'eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
 	with open(f_name, 'wb') as f:
 		msgpack.pack(rankings_by_year, f)
+	# print rankings_by_year
 
 	return rankings_by_year
 
@@ -136,22 +137,28 @@ def graph_network(adj_matrices, start_year, years_of_interest, degrees):
 
 # Aggregate the matrices or vectors for every x years
 # ex. aggregate every 5 years worth of data
-def aggregate_years(array, years):
-	return [sum(array[i:i+5]) for i in range(0, len(array), years)]
+def aggregate_years(array, years_per_aggregate):
+	return [sum(array[i:i+5]) for i in range(0, len(array), years_per_aggregate)]
 
 # First load the serialized vectors and matrices
-vectors, matrices, cat_dict = load_network(network_to_load)
+# vectors, matrices, cat_dict = load_network(network_to_load)
 
 # Calculate the degrees for each category in the adjacency matrices
 # unnormalized_degrees, normalized_degrees = calculate_degrees(matrices, vectors)
 # print normalized_degrees
 # # print unnormalized_degrees
 
-calculate_eigenvector_centrality(matrices)
+# calculate_eigenvector_centrality(matrices, years_per_aggregate)
 # np.set_printoptions(threshold=np.inf)
 
 # Graph the networks for some years
 # graph_network(matrices, start_year, years_to_graph, unnormalized_degrees)
+
+f_name = 'eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
+with open(f_name, 'rb') as f:
+	print f_name
+	rankings = msgpack.unpack(f)
+print rankings[20]
 
 # TODO:
 # Work on graphing

@@ -64,13 +64,14 @@ def retrieve_patent_data():
 	return patents
 
 # Create network category dictionary: {main_uspto: index of category in adj matrix}
-def create_uspto_dict(patents):
+def create_uspto_dict(patents, valid_usptos):
 	# First find out how many distinct categories there are
 	uspto_set = set() # Set containing all main_uspto values
 	uspto_dict = {} # Dictionary mapping each main_uspto to its index value in adjacency matrix
 
 	for d in patents.itervalues():
-		uspto_set.add(d['main_uspto'])
+		if d['main_uspto'] in valid_usptos:
+			uspto_set.add(d['main_uspto'])
 
 	counter = 0
 	for item in uspto_set:
@@ -92,6 +93,10 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 	valid_usptos = set() # Set of all correct usptos
 	for i, row in df_usptos.iterrows():
 		valid_usptos.add(str(row['uspto']))
+
+	# Dictionary mapping each main_uspto to its index value in adjacency matrix
+	uspto_dict = create_uspto_dict(patents, valid_usptos)
+	n = len(uspto_dict)
 
 	# Initialize the list of vectors and matrices
 	num_years = end_year - start_year

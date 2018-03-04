@@ -16,7 +16,7 @@ from networkx.drawing.nx_agraph import write_dot
 m.patch()
 
 # Initialize variables
-start_year = 1835 # Default: 1835
+start_year = 1858 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
@@ -135,13 +135,26 @@ def graph_network(adj_matrices, start_year, years_of_interest, degrees):
 
 	plt.show()  # pyplot draw()
 
+# Graphs the heatmap for the years of interest
+def graph_heatmap(adj_matrices, start_year, years_of_interest):
+	# Calculate the year indices for the years of interest
+	year_indices = [i - start_year for i in years_of_interest]
+	curr_year_index = year_indices[3]
+
+	a = matrices[curr_year_index]
+	for i in range(len(a)):
+		a[i,i] = 0
+	plt.imshow(a, cmap='hot', interpolation='nearest')
+	plt.colorbar()
+	plt.show()
+
 # Aggregate the matrices or vectors for every x years
 # ex. aggregate every 5 years worth of data
 def aggregate_years(array, years_per_aggregate):
 	return [sum(array[i:i+5]) for i in range(0, len(array), years_per_aggregate)]
 
 # First load the serialized vectors and matrices
-# vectors, matrices, cat_dict = load_network(network_to_load)
+vectors, matrices, cat_dict = load_network(network_to_load)
 
 # Calculate the degrees for each category in the adjacency matrices
 # unnormalized_degrees, normalized_degrees = calculate_degrees(matrices, vectors)
@@ -154,11 +167,12 @@ def aggregate_years(array, years_per_aggregate):
 # Graph the networks for some years
 # graph_network(matrices, start_year, years_to_graph, unnormalized_degrees)
 
-f_name = 'eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
-with open(f_name, 'rb') as f:
-	print f_name
-	rankings = msgpack.unpack(f)
-print rankings[20]
+graph_heatmap(matrices, start_year, years_to_graph)
+
+# f_name = 'eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
+# with open(f_name, 'rb') as f:
+# 	rankings = msgpack.unpack(f)
+# print rankings[10]
 
 # TODO:
 # Work on graphing
@@ -196,3 +210,4 @@ print rankings[20]
 # print(min(values))
 
 # plt.show()  # pyplot draw()
+

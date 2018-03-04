@@ -12,7 +12,7 @@ import os
 m.patch()
 
 # Initialize variables
-start_year = 1835 # Default: 1835
+start_year = 1858 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 num_classes = 'few' # 'many' = 108 classes, 'few' = 8 main classes
@@ -223,9 +223,11 @@ def apply_crosswalk(num_classes):
 			# Want to find the uspto for each index in the original matrix, then map that to a ipc using the cw_dict
 			# Then, transfer that value to the ipc_matrices/vectors by finding the ipc's index in ipc_dict
 			uspto = reverse_uspto_dict[j]
-			# Skip current patent if it has a fault id
+			# Skip current patent if it has a faulty id
 			if uspto not in cw_dict:
 				continue
+			else:
+				ipc = cw_dict[uspto]
 			ipc_index = ipc_dict[ipc]
 
 			# Transfer value from uspto_matrix/vector to ifc_matrix/vector
@@ -233,30 +235,35 @@ def apply_crosswalk(num_classes):
 			# Loop through each column k in row j of this matrix
 			for k in range(len(uspto_matrices[i][j])):
 				uspto_2 = reverse_uspto_dict[k]
-				# Skip current patent if it has a fault id
+				# Skip current patent if it has a faulty id
 				if uspto_2 not in cw_dict:
 					continue
+				else:
+					ipc_2 = cw_dict[uspto_2]
 				ipc_index_2 = ipc_dict[ipc_2]
 				ipc_matrices[i][ipc_index, ipc_index_2] += uspto_matrices[i][j, k]
 
-	print not_in_cw
-	return
-
 	# Save vectors and matrices into serialized files
-	with open('ipc_vectors.msgpack', 'wb') as f:
+	if num_classes == 'many':
+		suffix = '_108_cats.msgpack'
+	elif num_classes == 'few':
+		suffix = '_8_cats.msgpack'
+	with open('ipc_vectors' + suffix, 'wb') as f:
 		msgpack.pack(ipc_vectors, f)
-	with open('ipc_matrices.msgpack', 'wb') as f:
+	with open('ipc_matrices' + suffix, 'wb') as f:
 		msgpack.pack(ipc_matrices, f)
-	with open('ipc_dictionary.msgpack', 'wb') as f:
+	with open('ipc_dictionary' + suffix, 'wb') as f:
 		msgpack.pack(ipc_dict, f)
 	print 'done dumping'
+
+	return
 
 # Define variables
 patents = retrieve_patent_data() # Dictionary of format: {patnum: {fyear: int, main_uspto: int}}
 
-create_vector_and_matrix(patents, start_year, end_year, year_gap)
+# create_vector_and_matrix(patents, start_year, end_year, year_gap)
 
-# apply_crosswalk(num_classes)
+apply_crosswalk(num_classes)
 
 # create_uspto_dict(patents)
 
@@ -265,10 +272,12 @@ create_vector_and_matrix(patents, start_year, end_year, year_gap)
 # -Disregard entries with non integer uspto values
 # 	-Preferably drop this in retrieve_patent_data
 # -Make sure all uspto and ipc are strings
-# -Drop uspto values that don't appear in crosswalk?
 
 # if fyear is missing, use iyear (Done)
 # crosswalk, skip over bad uspto numbers (Done)
 # create 5 year aggregate (Done)
 # run eigenvector centrality measure on these aggregates and save output (year, ranked categories, centrality measure) (Dones)
 # heat map, category web
+# Output CSV
+# Heatmap
+# Network

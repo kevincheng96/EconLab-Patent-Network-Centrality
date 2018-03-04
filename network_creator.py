@@ -248,12 +248,15 @@ def apply_crosswalk(num_classes):
 		suffix = '_108_cats.msgpack'
 	elif num_classes == 'few':
 		suffix = '_8_cats.msgpack'
+
 	with open('./cache/ipc_vectors' + suffix, 'wb') as f:
 		msgpack.pack(ipc_vectors, f)
 	with open('./cache/ipc_matrices' + suffix, 'wb') as f:
 		msgpack.pack(ipc_matrices, f)
 	with open('./cache/ipc_dictionary' + suffix, 'wb') as f:
 		msgpack.pack(ipc_dict, f)
+	with open('./cache/cw_dictionary' + suffix, 'wb') as f:
+		msgpack.pack(cw_dict, f)
 	print 'done dumping'
 
 	return
@@ -277,7 +280,6 @@ apply_crosswalk(num_classes)
 # crosswalk, skip over bad uspto numbers (Done)
 # create 5 year aggregate (Done)
 # run eigenvector centrality measure on these aggregates and save output (year, ranked categories, centrality measure) (Dones)
-# heat map, category web
 # Output CSV
-# Heatmap
-# Network
+# Heatmap (Done)
+# Category web network where the same ipc_8 patents have the same color

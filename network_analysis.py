@@ -6,6 +6,7 @@ import msgpack
 import msgpack_numpy as m
 import networkx as nx
 import matplotlib.pyplot as plt
+import csv
 import os
 
 from networkx.drawing.nx_agraph import write_dot
@@ -20,7 +21,7 @@ start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
-network_to_load = 'ipc_8' # uspto or ipc_108 or ipc_8
+network_to_load = 'ipc_108' # uspto or ipc_108 or ipc_8
 years_per_aggregate = 5 # number of years of data in each matrix/vector
 
 # Loads the vectors and adjacency matrixes
@@ -108,6 +109,16 @@ def calculate_eigenvector_centrality(adj_matrices, years_per_aggregate):
 		# Add to the rankings_by_year array
 		rankings_by_year.append((curr_year, rankings))
 
+	# Write into a csv file
+	years = [y[0] for x in rankings_by_year for y in x[0]] # Extract the years to form the rows
+	rankings = [y[1] for x in rankings_by_year for y in x[0]] # Extract rankings
+	transposed_rankings = zip(*rankings)
+	with open('rankings.csv', 'wb') as f:
+		writer = csv.writer(f)
+		writer.writerow(years)
+		for row in transposed_rankings:
+			writer.writerow(row)
+
 	# Save ranking into a serialized file
 	f_name = './cache/eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
 	with open(f_name, 'wb') as f:
@@ -144,6 +155,34 @@ def graph_network(adj_matrices, start_year, years_of_interest, degrees):
 
 	plt.show()  # pyplot draw()
 
+# # Graph the networks for the years of interest
+# def graph_network(adj_matrices, start_year, years_of_interest, degrees):
+# 	# Calculate the year indices for the years of interest
+# 	year_indices = [i - start_year for i in years_of_interest]
+# 	curr_year_index = year_indices[3]
+
+# 	# Create networkx graph from matrix
+# 	G = nx.from_numpy_matrix(adj_matrices[curr_year_index], create_using=nx.DiGraph())
+
+# 	edges = G.edges()
+# 	print edges # FIND WEIGHTS OF EDGES, THIS DOES NOT WORK
+
+# 	# Draw the graph using networkx
+# 	pos = nx.spring_layout(G)
+# 	cmap = plt.cm.jet
+# 	values = [row[1] for row in degrees[curr_year_index]] # In-degree for each node
+# 	nx.draw(G, pos=pos, with_labels=False, node_color=values, node_size=[v * 25 for v in values], width=0.05, arrowsize=3, cmap=cmap)  # networkx draw()
+
+# 	# Set color bar
+# 	sm = plt.cm.ScalarMappable(cmap=cmap)
+# 	sm._A = []
+# 	sm.set_clim(vmin=min(values), vmax=max(values))
+# 	plt.colorbar(sm, shrink=0.7)
+# 	print(max(values))
+# 	print(min(values))
+
+# 	plt.show()  # pyplot draw()
+
 # Graphs the heatmap for the years of interest
 def graph_heatmap(adj_matrices, start_year, years_of_interest):
 	# Calculate the year indices for the years of interest
@@ -151,8 +190,8 @@ def graph_heatmap(adj_matrices, start_year, years_of_interest):
 	curr_year_index = year_indices[3]
 
 	a = matrices[curr_year_index]
-	for i in range(len(a)):
-		a[i,i] = 0
+	# for i in range(len(a)):
+	# 	a[i,i] = 0
 	plt.imshow(a, cmap='hot', interpolation='nearest')
 	plt.colorbar()
 	plt.show()
@@ -170,13 +209,14 @@ vectors, matrices, cat_dict = load_network(network_to_load)
 # print normalized_degrees
 # # print unnormalized_degrees
 
-# calculate_eigenvector_centrality(matrices, years_per_aggregate)
+calculate_eigenvector_centrality(matrices, years_per_aggregate)
 # np.set_printoptions(threshold=np.inf)
 
 # Graph the networks for some years
 # graph_network(matrices, start_year, years_to_graph, unnormalized_degrees)
 
-graph_heatmap(matrices, start_year, years_to_graph)
+# Graph heatmap
+# graph_heatmap(matrices, start_year, years_to_graph)
 
 # f_name = 'eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
 # with open(f_name, 'rb') as f:

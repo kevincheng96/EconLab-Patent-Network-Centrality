@@ -84,8 +84,14 @@ def create_uspto_dict(patents):
 # Create vector and adjacency matrix ###### CREATE A LIST OF ADJACENCY MATRICES SPANNING n YEARS EACH
 # fn = filename of csv, patents = dictionary of patents, fyear_gap = maximum allowed years between cited and citing patent
 def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
-	uspto_dict = create_uspto_dict(patents) # Dictionary mapping each main_uspto to its index value in adjacency matrix
-	n = len(uspto_dict)
+	# Read from the crosswalk file to find non-faulty uspto values to keep later on
+	df = pd.read_csv('./data/cw_uspto_ipc_cpc.csv')
+	df_usptos = df[['uspto']] # Crosswalk dataframe containing two columns: uspto and ipc
+	
+	# Construct the set of all non-faulty uspto values
+	valid_usptos = set() # Set of all correct usptos
+	for i, row in df_usptos.iterrows():
+		valid_usptos.add(str(row['uspto']))
 
 	# Initialize the list of vectors and matrices
 	num_years = end_year - start_year
@@ -124,6 +130,9 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 			# Iterate through each patent in the file and all the patents that cite it
 			for patnum, row in df.iterrows():
 				fyear, uspto = patents[patnum]['fyear'], patents[patnum]['main_uspto']
+				# Skip the current patent if it has a faulty uspto number
+				if uspto not in valid_usptos:
+					continue
 				# If fyear is NaN, use the iyear instead
 				if pd.isnull(fyear):
 					iyear = patents[patnum]['iyear']
@@ -144,6 +153,9 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 						break
 					else:
 						cit_fyear, cit_uspto = patents[cit_by]['fyear'], patents[cit_by]['main_uspto']
+						# Skip the current patent if it has a faulty uspto number
+						if cit_uspto not in valid_usptos:
+							continue
 						# If the fyear for this citing patent is null, use iyear instead
 						if pd.isnull(cit_fyear):
 							cit_iyear = patents[cit_by]['iyear']
@@ -264,9 +276,9 @@ def apply_crosswalk(num_classes):
 # Define variables
 patents = retrieve_patent_data() # Dictionary of format: {patnum: {fyear: int, main_uspto: int}}
 
-# create_vector_and_matrix(patents, start_year, end_year, year_gap)
+create_vector_and_matrix(patents, start_year, end_year, year_gap)
 
-apply_crosswalk(num_classes)
+# apply_crosswalk(num_classes)
 
 # create_uspto_dict(patents)
 

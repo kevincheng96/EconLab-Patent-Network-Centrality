@@ -16,28 +16,37 @@ from networkx.drawing.nx_agraph import write_dot
 m.patch()
 
 # Initialize variables
-start_year = 1858 # Default: 1835
+start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
-network_to_load = 'uspto' # uspto or ipc
+network_to_load = 'ipc_8' # uspto or ipc_108 or ipc_8
 years_per_aggregate = 5 # number of years of data in each matrix/vector
 
 # Loads the vectors and adjacency matrixes
 def load_network(network_to_load):
 	if network_to_load == 'uspto':
-		with open('uspto_vectors.msgpack', 'rb') as f:
+		with open('./cache/uspto_vectors.msgpack', 'rb') as f:
 				vectors = msgpack.unpack(f)
-		with open('uspto_matrices.msgpack', 'rb') as f:
+		with open('./cache/uspto_matrices.msgpack', 'rb') as f:
 				matrices = msgpack.unpack(f)
-		with open('uspto_dictionary.msgpack', 'rb') as f:
+		with open('./cache/uspto_dictionary.msgpack', 'rb') as f:
 				cat_dict = msgpack.unpack(f)
-	elif network_to_load == 'ipc':
-		with open('ipc_vectors.msgpack', 'rb') as f:
+	elif network_to_load == 'ipc_108':
+		# Load ipcs with 108 categories
+		with open('./cache/ipc_vectors_108_cats.msgpack', 'rb') as f:
 				vectors = msgpack.unpack(f)
-		with open('ipc_matrices.msgpack', 'rb') as f:
+		with open('./cache/ipc_matrices_108_cats.msgpack', 'rb') as f:
 				matrices = msgpack.unpack(f)
-		with open('ipc_dictionary.msgpack', 'rb') as f:
+		with open('./cache/ipc_dictionary_108_cats.msgpack', 'rb') as f:
+				cat_dict = msgpack.unpack(f)
+	elif network_to_load == 'ipc_8':
+		# Load ipcs with 8 categories
+		with open('./cache/ipc_vectors_8_cats.msgpack', 'rb') as f:
+				vectors = msgpack.unpack(f)
+		with open('./cache/ipc_matrices_8_cats.msgpack', 'rb') as f:
+				matrices = msgpack.unpack(f)
+		with open('./cache/ipc_dictionary_8_cats.msgpack', 'rb') as f:
 				cat_dict = msgpack.unpack(f)
 	return vectors, matrices, cat_dict
 
@@ -100,7 +109,7 @@ def calculate_eigenvector_centrality(adj_matrices, years_per_aggregate):
 		rankings_by_year.append((curr_year, rankings))
 
 	# Save ranking into a serialized file
-	f_name = 'eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
+	f_name = './cache/eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
 	with open(f_name, 'wb') as f:
 		msgpack.pack(rankings_by_year, f)
 	# print rankings_by_year

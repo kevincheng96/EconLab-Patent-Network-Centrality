@@ -110,8 +110,8 @@ def calculate_eigenvector_centrality(adj_matrices, years_per_aggregate):
 		rankings_by_year.append((curr_year, rankings))
 
 	# Write into a csv file
-	years = [y[0] for x in rankings_by_year for y in x[0]] # Extract the years to form the rows
-	rankings = [y[1] for x in rankings_by_year for y in x[0]] # Extract rankings
+	years = [x[0] for x in rankings_by_year] # Extract the years to form the rows
+	rankings = [x[1] for x in rankings_by_year] # Extract rankings
 	transposed_rankings = zip(*rankings)
 	with open('rankings.csv', 'wb') as f:
 		writer = csv.writer(f)

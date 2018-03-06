@@ -21,7 +21,7 @@ start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
-network_to_use = 'ipc108' # uspto or ipc108 or ipc8
+network_to_use = 'ipc8' # uspto or ipc108 or ipc8
 years_per_aggregate = 5 # number of years of data in each matrix/vector
 
 # Loads the vectors and adjacency matrixes
@@ -89,14 +89,15 @@ def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_agg
 		# Create a list of rankings, where the most central patents are first
 		rankings = [[reverse_uspto_dict[k], v] for k, v in centrality.iteritems()]
 		rankings = sorted(rankings, key = lambda x: x[1])[::-1] # Sort by value
-		# Add to the rankings_by_year array
-		rankings_by_year.append((curr_year, rankings))
+		# Add 2 entries to the rankings_by_year array (one for the patent name, other for eigenvector)
+		rankings_by_year.append((curr_year, [x[0] for x in rankings]))
+		rankings_by_year.append((curr_year, [x[1] for x in rankings]))
 
 	# Write into a csv file
-	years = [x[0] for x in rankings_by_year] # Extract the years to form the rows
+	years = [x[0] for x in rankings_by_year] # Extract the years to form the first row
 	rankings = [x[1] for x in rankings_by_year] # Extract rankings
 	transposed_rankings = zip(*rankings)
-	f_name = './cache/' + network_to_use + '/rankings_' + str(years_per_aggregate) + 'year_aggregates.msgpack'
+	f_name = './cache/' + network_to_use + '/rankings_' + str(years_per_aggregate) + 'year_aggregates.csv'
 	with open(f_name, 'wb') as f:
 		writer = csv.writer(f)
 		writer.writerow(years)

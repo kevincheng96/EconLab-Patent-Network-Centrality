@@ -15,7 +15,7 @@ m.patch()
 start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
-num_classes = 'many' # 'many' = 108 classes, 'few' = 8 main classes
+num_classes = 'few' # 'many' = 108 classes, 'few' = 8 main classes
 
 # Load in the patent data
 # Dictionary of format: {patnum: {fyear: int, main_uspto: int}}
@@ -281,9 +281,9 @@ def apply_crosswalk(num_classes):
 # Define variables
 patents = retrieve_patent_data() # Dictionary of format: {patnum: {fyear: int, main_uspto: int}}
 
-create_vector_and_matrix(patents, start_year, end_year, year_gap)
+# create_vector_and_matrix(patents, start_year, end_year, year_gap)
 
-# apply_crosswalk(num_classes)
+apply_crosswalk(num_classes)
 
 # create_uspto_dict(patents)
 

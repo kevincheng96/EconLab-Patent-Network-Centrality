@@ -21,34 +21,17 @@ start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
-network_to_load = 'ipc_108' # uspto or ipc_108 or ipc_8
+network_to_use = 'ipc108' # uspto or ipc108 or ipc8
 years_per_aggregate = 5 # number of years of data in each matrix/vector
 
 # Loads the vectors and adjacency matrixes
-def load_network(network_to_load):
-	if network_to_load == 'uspto':
-		with open('./cache/uspto_vectors.msgpack', 'rb') as f:
-				vectors = msgpack.unpack(f)
-		with open('./cache/uspto_matrices.msgpack', 'rb') as f:
-				matrices = msgpack.unpack(f)
-		with open('./cache/uspto_dictionary.msgpack', 'rb') as f:
-				cat_dict = msgpack.unpack(f)
-	elif network_to_load == 'ipc_108':
-		# Load ipcs with 108 categories
-		with open('./cache/ipc_vectors_108_cats.msgpack', 'rb') as f:
-				vectors = msgpack.unpack(f)
-		with open('./cache/ipc_matrices_108_cats.msgpack', 'rb') as f:
-				matrices = msgpack.unpack(f)
-		with open('./cache/ipc_dictionary_108_cats.msgpack', 'rb') as f:
-				cat_dict = msgpack.unpack(f)
-	elif network_to_load == 'ipc_8':
-		# Load ipcs with 8 categories
-		with open('./cache/ipc_vectors_8_cats.msgpack', 'rb') as f:
-				vectors = msgpack.unpack(f)
-		with open('./cache/ipc_matrices_8_cats.msgpack', 'rb') as f:
-				matrices = msgpack.unpack(f)
-		with open('./cache/ipc_dictionary_8_cats.msgpack', 'rb') as f:
-				cat_dict = msgpack.unpack(f)
+def load_network(network_to_use):
+	with open('./cache/' + network_to_use + '/vectors.msgpack', 'rb') as f:
+			vectors = msgpack.unpack(f)
+	with open('./cache/' + network_to_use + '/matrices.msgpack', 'rb') as f:
+			matrices = msgpack.unpack(f)
+	with open('./cache/' + network_to_use + '/dictionary.msgpack', 'rb') as f:
+			cat_dict = msgpack.unpack(f)
 	return vectors, matrices, cat_dict
 
 # Calculate in and out degrees for all the categories in the network over time
@@ -87,7 +70,7 @@ def calculate_degrees(adj_matrices, vectors):
 	return unnormalized_degrees, normalized_degrees
 
 # Calculate the eigenvector centrality for the network
-def calculate_eigenvector_centrality(adj_matrices, years_per_aggregate):
+def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_aggregate):
 	# List to be populated with centrality measures for each year
 	rankings_by_year = []
 
@@ -113,17 +96,12 @@ def calculate_eigenvector_centrality(adj_matrices, years_per_aggregate):
 	years = [x[0] for x in rankings_by_year] # Extract the years to form the rows
 	rankings = [x[1] for x in rankings_by_year] # Extract rankings
 	transposed_rankings = zip(*rankings)
-	with open('rankings.csv', 'wb') as f:
+	f_name = './cache/' + network_to_use + '/rankings_' + str(years_per_aggregate) + 'year_aggregates.msgpack'
+	with open(f_name, 'wb') as f:
 		writer = csv.writer(f)
 		writer.writerow(years)
 		for row in transposed_rankings:
 			writer.writerow(row)
-
-	# Save ranking into a serialized file
-	f_name = './cache/eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
-	with open(f_name, 'wb') as f:
-		msgpack.pack(rankings_by_year, f)
-	# print rankings_by_year
 
 	return rankings_by_year
 
@@ -202,14 +180,14 @@ def aggregate_years(array, years_per_aggregate):
 	return [sum(array[i:i+5]) for i in range(0, len(array), years_per_aggregate)]
 
 # First load the serialized vectors and matrices
-vectors, matrices, cat_dict = load_network(network_to_load)
+vectors, matrices, cat_dict = load_network(network_to_use)
 
 # Calculate the degrees for each category in the adjacency matrices
 # unnormalized_degrees, normalized_degrees = calculate_degrees(matrices, vectors)
 # print normalized_degrees
 # # print unnormalized_degrees
 
-calculate_eigenvector_centrality(matrices, years_per_aggregate)
+calculate_eigenvector_centrality(network_to_use, matrices, years_per_aggregate)
 # np.set_printoptions(threshold=np.inf)
 
 # Graph the networks for some years

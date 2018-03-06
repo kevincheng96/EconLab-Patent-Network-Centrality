@@ -179,13 +179,13 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 
 	# Save vectors and matrices into serialized files
 	print 'dumping vectors'
-	with open('./cache/uspto_vectors.msgpack', 'wb') as f:
+	with open('./cache/uspto/vectors.msgpack', 'wb') as f:
 		msgpack.pack(vectors, f)
 	print 'dumping matrices'
-	with open('./cache/uspto_matrices.msgpack', 'wb') as f:
+	with open('./cache/uspto/matrices.msgpack', 'wb') as f:
 		msgpack.pack(matrices, f)
 	print 'dumping uspto_dict'
-	with open('./cache/uspto_dictionary.msgpack', 'wb') as f:
+	with open('./cache/uspto/dictionary.msgpack', 'wb') as f:
 		msgpack.pack(uspto_dict, f)
 	print 'done dumping'
 
@@ -194,11 +194,11 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 # Converts the adjacency matrix and vector from 430+ categories to less categories using the crosswalk data
 def apply_crosswalk(num_classes):
 	# Read in existing data
-	with open('./cache/uspto_vectors.msgpack', 'rb') as f:
+	with open('./cache/uspto/vectors.msgpack', 'rb') as f:
 			uspto_vectors = msgpack.unpack(f)
-	with open('./cache/uspto_matrices.msgpack', 'rb') as f:
+	with open('./cache/uspto/matrices.msgpack', 'rb') as f:
 			uspto_matrices = msgpack.unpack(f)
-	with open('./cache/uspto_dictionary.msgpack', 'rb') as f:
+	with open('./cache/uspto/dictionary.msgpack', 'rb') as f:
 			uspto_dict = msgpack.unpack(f)
 
 	# Read from the crosswalk file
@@ -262,17 +262,17 @@ def apply_crosswalk(num_classes):
 
 	# Save vectors and matrices into serialized files
 	if num_classes == 'many':
-		suffix = '_108_cats.msgpack'
+		prefix = 'ipc108/'
 	elif num_classes == 'few':
-		suffix = '_8_cats.msgpack'
+		prefix = 'ipc8/'
 
-	with open('./cache/ipc_vectors' + suffix, 'wb') as f:
+	with open('./cache/' + prefix + 'vectors.msgpack', 'wb') as f:
 		msgpack.pack(ipc_vectors, f)
-	with open('./cache/ipc_matrices' + suffix, 'wb') as f:
+	with open('./cache/' + prefix + 'matrices.msgpack', 'wb') as f:
 		msgpack.pack(ipc_matrices, f)
-	with open('./cache/ipc_dictionary' + suffix, 'wb') as f:
+	with open('./cache/' + prefix + 'dictionary.msgpack', 'wb') as f:
 		msgpack.pack(ipc_dict, f)
-	with open('./cache/cw_dictionary' + suffix, 'wb') as f:
+	with open('./cache/' + prefix + 'cw_dictionary.msgpack', 'wb') as f:
 		msgpack.pack(cw_dict, f)
 	print 'done dumping'
 

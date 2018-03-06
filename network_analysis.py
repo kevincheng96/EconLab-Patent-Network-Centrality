@@ -115,9 +115,11 @@ def graph_network(adj_matrices, vectors, start_year, years_of_interest):
 	with open('./cache/uspto/dictionary.msgpack', 'rb') as f:
 		uspto_dict = msgpack.unpack(f)
 
+
+	index = 4
 	# Calculate the year indices for the years of interest
 	year_indices = [i - start_year for i in years_of_interest]
-	curr_year_index = year_indices[4]
+	curr_year_index = year_indices[index]
 
 	# Create networkx graph from matrix
 	a = adj_matrices[curr_year_index]
@@ -142,6 +144,7 @@ def graph_network(adj_matrices, vectors, start_year, years_of_interest):
 	ipc_colors = [ipc_to_color[ipc] for ipc in ipcs]
 
 	# Draw the graph using networkx
+	plt.title('Network of patents by ' + network_to_use + ' in ' + str(years_of_interest[index]))
 	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 25 for s in sizes], width=0.05, arrowsize=3, cmap=cmap)  # networkx draw()
 
 	# Create a legend displaying the mapping from ipc to a color
@@ -155,8 +158,7 @@ def graph_network(adj_matrices, vectors, start_year, years_of_interest):
 		        patchList.append(data_key)
 		        visited_ipc.add(ipcs[i])
 
-	plt.legend(handles=patchList, loc='upper right')
-
+	plt.legend(handles=patchList, loc='upper right', title='ipc8 categories')
 	plt.show()
 
 # Graphs the heatmap for the years of interest

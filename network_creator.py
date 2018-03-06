@@ -297,6 +297,6 @@ apply_crosswalk(num_classes)
 # crosswalk, skip over bad uspto numbers (Done)
 # create 5 year aggregate (Done)
 # run eigenvector centrality measure on these aggregates and save output (year, ranked categories, centrality measure) (Dones)
-# Output CSV
+# Output CSV (Done)
 # Heatmap (Done)
-# Category web network where the same ipc_8 patents have the same color
+# Category web network where the same ipc_8 patents have the same color (Done)

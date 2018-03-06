@@ -6,6 +6,7 @@ import msgpack
 import msgpack_numpy as m
 import networkx as nx
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import csv
 import os
 
@@ -20,8 +21,8 @@ m.patch()
 start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
-years_to_graph = [1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
-network_to_use = 'ipc8' # uspto or ipc108 or ipc8
+years_to_graph = [1840, 1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
+network_to_use = 'uspto' # uspto or ipc108 or ipc8
 years_per_aggregate = 5 # number of years of data in each matrix/vector
 
 # Loads the vectors and adjacency matrixes
@@ -107,60 +108,56 @@ def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_agg
 	return rankings_by_year
 
 # Graph the networks for the years of interest
-def graph_network(adj_matrices, start_year, years_of_interest, degrees):
+def graph_network(adj_matrices, vectors, start_year, years_of_interest):
+	# Load in the crosswalk dictionary for 8 categories
+	with open('./cache/ipc8/cw_dictionary.msgpack', 'rb') as f:
+		cw_dict = msgpack.unpack(f)
+	with open('./cache/uspto/dictionary.msgpack', 'rb') as f:
+		uspto_dict = msgpack.unpack(f)
+
 	# Calculate the year indices for the years of interest
 	year_indices = [i - start_year for i in years_of_interest]
-	curr_year_index = year_indices[3]
+	curr_year_index = year_indices[4]
 
 	# Create networkx graph from matrix
-	G = nx.from_numpy_matrix(adj_matrices[curr_year_index], create_using=nx.DiGraph())
+	a = adj_matrices[curr_year_index]
+	G = nx.from_numpy_matrix(a, create_using=nx.DiGraph())
 
-	edges = G.edges()
-	print edges # FIND WEIGHTS OF EDGES, THIS DOES NOT WORK
+	# Calculate the degrees for each category in the adjacency matrices
+	unnormalized_degrees, normalized_degrees = calculate_degrees(adj_matrices, vectors)
 
 	# Draw the graph using networkx
 	pos = nx.spring_layout(G)
+	sizes = [row[1] for row in unnormalized_degrees[curr_year_index]] # In-degree for each node
+	reverse_uspto_dict = {v: k for k, v in uspto_dict.iteritems()}
+	usptos = [reverse_uspto_dict[i] for i in range(len(a))] # Uspto category for each index in adjacency matrix
+	# Generate colors and map each ipc8 category to a distinct color
 	cmap = plt.cm.jet
-	values = [row[1] for row in degrees[curr_year_index]] # In-degree for each node
-	nx.draw(G, pos=pos, with_labels=False, node_color=values, node_size=[v * 25 for v in values], width=0.05, arrowsize=3, cmap=cmap)  # networkx draw()
+	colors = cmap(np.linspace(0, 1, 8))
+	ipcs = [cw_dict[uspto] for uspto in usptos] # Ipc category for each index in adjacency matrix
+	ipc_to_color = {}
+	reverse_cw_dict = {v: k for k, v in cw_dict.iteritems()}
+	for i, ipc in enumerate(reverse_cw_dict.iterkeys()):
+		ipc_to_color[ipc] = colors[i]
+	ipc_colors = [ipc_to_color[ipc] for ipc in ipcs]
 
-	# Set color bar
-	sm = plt.cm.ScalarMappable(cmap=cmap)
-	sm._A = []
-	sm.set_clim(vmin=min(values), vmax=max(values))
-	plt.colorbar(sm, shrink=0.7)
-	print(max(values))
-	print(min(values))
+	# Draw the graph using networkx
+	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 25 for s in sizes], width=0.05, arrowsize=3, cmap=cmap)  # networkx draw()
 
-	plt.show()  # pyplot draw()
+	# Create a legend displaying the mapping from ipc to a color
+	patchList = []
+	visited_ipc = set() # Only want to map each ipc once to a color
+	for i in range(len(ipcs)):
+			if ipcs[i] in visited_ipc:
+				continue
+			else:
+				data_key = mpatches.Patch(color=ipc_colors[i], label=ipcs[i])
+		        patchList.append(data_key)
+		        visited_ipc.add(ipcs[i])
 
-# # Graph the networks for the years of interest
-# def graph_network(adj_matrices, start_year, years_of_interest, degrees):
-# 	# Calculate the year indices for the years of interest
-# 	year_indices = [i - start_year for i in years_of_interest]
-# 	curr_year_index = year_indices[3]
+	plt.legend(handles=patchList, loc='upper right')
 
-# 	# Create networkx graph from matrix
-# 	G = nx.from_numpy_matrix(adj_matrices[curr_year_index], create_using=nx.DiGraph())
-
-# 	edges = G.edges()
-# 	print edges # FIND WEIGHTS OF EDGES, THIS DOES NOT WORK
-
-# 	# Draw the graph using networkx
-# 	pos = nx.spring_layout(G)
-# 	cmap = plt.cm.jet
-# 	values = [row[1] for row in degrees[curr_year_index]] # In-degree for each node
-# 	nx.draw(G, pos=pos, with_labels=False, node_color=values, node_size=[v * 25 for v in values], width=0.05, arrowsize=3, cmap=cmap)  # networkx draw()
-
-# 	# Set color bar
-# 	sm = plt.cm.ScalarMappable(cmap=cmap)
-# 	sm._A = []
-# 	sm.set_clim(vmin=min(values), vmax=max(values))
-# 	plt.colorbar(sm, shrink=0.7)
-# 	print(max(values))
-# 	print(min(values))
-
-# 	plt.show()  # pyplot draw()
+	plt.show()
 
 # Graphs the heatmap for the years of interest
 def graph_heatmap(adj_matrices, start_year, years_of_interest):
@@ -183,24 +180,13 @@ def aggregate_years(array, years_per_aggregate):
 # First load the serialized vectors and matrices
 vectors, matrices, cat_dict = load_network(network_to_use)
 
-# Calculate the degrees for each category in the adjacency matrices
-# unnormalized_degrees, normalized_degrees = calculate_degrees(matrices, vectors)
-# print normalized_degrees
-# # print unnormalized_degrees
-
-calculate_eigenvector_centrality(network_to_use, matrices, years_per_aggregate)
-# np.set_printoptions(threshold=np.inf)
+# calculate_eigenvector_centrality(network_to_use, matrices, years_per_aggregate)
 
 # Graph the networks for some years
-# graph_network(matrices, start_year, years_to_graph, unnormalized_degrees)
+graph_network(matrices, vectors, start_year, years_to_graph)
 
 # Graph heatmap
 # graph_heatmap(matrices, start_year, years_to_graph)
-
-# f_name = 'eigenvector_centrality_rankings_' + str(years_per_aggregate) + 'y.msgpack'
-# with open(f_name, 'rb') as f:
-# 	rankings = msgpack.unpack(f)
-# print rankings[10]
 
 # TODO:
 # Work on graphing

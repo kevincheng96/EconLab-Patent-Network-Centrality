@@ -262,17 +262,17 @@ def apply_crosswalk(num_classes):
 
 	# Save vectors and matrices into serialized files
 	if num_classes == 'many':
-		prefix = 'ipc108/'
+		prefix = 'ipc108'
 	elif num_classes == 'few':
-		prefix = 'ipc8/'
+		prefix = 'ipc8'
 
-	with open('./cache/' + prefix + 'vectors.msgpack', 'wb') as f:
+	with open('./cache/' + prefix + '/vectors.msgpack', 'wb') as f:
 		msgpack.pack(ipc_vectors, f)
-	with open('./cache/' + prefix + 'matrices.msgpack', 'wb') as f:
+	with open('./cache/' + prefix + '/matrices.msgpack', 'wb') as f:
 		msgpack.pack(ipc_matrices, f)
-	with open('./cache/' + prefix + 'dictionary.msgpack', 'wb') as f:
+	with open('./cache/' + prefix + '/dictionary.msgpack', 'wb') as f:
 		msgpack.pack(ipc_dict, f)
-	with open('./cache/' + prefix + 'cw_dictionary.msgpack', 'wb') as f:
+	with open('./cache/uspto/' + 'cw_dictionary_to_' + prefix + '.msgpack', 'wb') as f:
 		msgpack.pack(cw_dict, f)
 	print 'done dumping'
 

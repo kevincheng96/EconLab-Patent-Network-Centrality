@@ -22,7 +22,7 @@ start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1840, 1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
-network_to_use = 'uspto' # uspto or ipc108 or ipc8
+network_to_use = 'ipc108' # uspto or ipc108 or ipc8
 years_per_aggregate = 5 # number of years of data in each matrix/vector
 
 # Loads the vectors and adjacency matrixes
@@ -108,15 +108,34 @@ def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_agg
 	return rankings_by_year
 
 # Graph the networks for the years of interest
-def graph_network(adj_matrices, vectors, start_year, years_of_interest):
-	# Load in the crosswalk dictionary for 8 categories
-	with open('./cache/ipc8/cw_dictionary.msgpack', 'rb') as f:
-		cw_dict = msgpack.unpack(f)
-	with open('./cache/uspto/dictionary.msgpack', 'rb') as f:
-		uspto_dict = msgpack.unpack(f)
-
+# Nodes will be colored based on their ipc8 category and sized based on their unnormalized in-degrees
+def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_interest):
+	# Depending on the network_to_use we are graphing, the crosswalk dictionary file we load will differ
+	# network_to_use = uspto
+	if network_to_use == 'uspto':
+		with open('./cache/uspto/cw_dictionary.msgpack', 'rb') as f:
+			cw_dict = msgpack.unpack(f)
+		with open('./cache/uspto/dictionary.msgpack', 'rb') as f:
+			cat_dict = msgpack.unpack(f)
+	elif network_to_use == 'ipc108':
+		with open('./cache/ipc108/dictionary.msgpack', 'rb') as f:
+			cat_dict = msgpack.unpack(f)
+		# Generate cw_dict mapping ipc108 to ipc8 
+		cw_dict = {}
+		for key in cat_dict:
+			if key not in cw_dict:
+				cw_dict[key] = key[0]
+	elif network_to_use == 'ipc8':
+		with open('./cache/ipc8/dictionary.msgpack', 'rb') as f:
+			cat_dict = msgpack.unpack(f)
+		# Generate cw_dict mapping ipc8 to ipc8 
+		cw_dict = {}
+		for key in cat_dict:
+			if key not in cw_dict:
+				cw_dict[key] = key
 
 	index = 4
+	
 	# Calculate the year indices for the years of interest
 	year_indices = [i - start_year for i in years_of_interest]
 	curr_year_index = year_indices[index]
@@ -131,12 +150,12 @@ def graph_network(adj_matrices, vectors, start_year, years_of_interest):
 	# Draw the graph using networkx
 	pos = nx.spring_layout(G)
 	sizes = [row[1] for row in unnormalized_degrees[curr_year_index]] # In-degree for each node
-	reverse_uspto_dict = {v: k for k, v in uspto_dict.iteritems()}
-	usptos = [reverse_uspto_dict[i] for i in range(len(a))] # Uspto category for each index in adjacency matrix
+	reverse_cat_dict = {v: k for k, v in cat_dict.iteritems()}
+	categories = [reverse_cat_dict[i] for i in range(len(a))] # Category for each index in adjacency matrix
 	# Generate colors and map each ipc8 category to a distinct color
 	cmap = plt.cm.jet
 	colors = cmap(np.linspace(0, 1, 8))
-	ipcs = [cw_dict[uspto] for uspto in usptos] # Ipc category for each index in adjacency matrix
+	ipcs = [cw_dict[cat] for cat in categories] # Ipc8 category for each index in adjacency matrix
 	ipc_to_color = {}
 	reverse_cw_dict = {v: k for k, v in cw_dict.iteritems()}
 	for i, ipc in enumerate(reverse_cw_dict.iterkeys()):
@@ -145,7 +164,7 @@ def graph_network(adj_matrices, vectors, start_year, years_of_interest):
 
 	# Draw the graph using networkx
 	plt.title('Network of patents by ' + network_to_use + ' in ' + str(years_of_interest[index]))
-	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 25 for s in sizes], width=0.05, arrowsize=3, cmap=cmap)  # networkx draw()
+	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 25 for s in sizes], width=0.1, arrowsize=6, cmap=cmap)  # networkx draw()
 
 	# Create a legend displaying the mapping from ipc to a color
 	patchList = []
@@ -185,7 +204,7 @@ vectors, matrices, cat_dict = load_network(network_to_use)
 # calculate_eigenvector_centrality(network_to_use, matrices, years_per_aggregate)
 
 # Graph the networks for some years
-graph_network(matrices, vectors, start_year, years_to_graph)
+graph_network(network_to_use, matrices, vectors, start_year, years_to_graph)
 
 # Graph heatmap
 # graph_heatmap(matrices, start_year, years_to_graph)

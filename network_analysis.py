@@ -43,18 +43,25 @@ def calculate_degrees(adj_matrices, vectors):
 	num_years = len(adj_matrices)
 	n = len(adj_matrices[0])
 	unnormalized_degrees = [np.zeros((n, 2)) for i in range(num_years)] # Create an Nx2 vector for each year
-	normalized_degrees = [np.zeros((n, 2)) for i in range(num_years)] # Create an Nx2 vector for each year
+	normalized_degrees_1 = [np.zeros((n, 2)) for i in range(num_years)] # Create an Nx2 vector for each year
+	normalized_degrees_2 = [np.zeros((n, 2)) for i in range(num_years)] # Create an Nx2 vector for each year
 
 	# Calculate the in and out degrees for each category for each year
+	# Two types of normalization:
+	# 1. Divide each in/out degree for each category by the total number of patents in that category
+	# 2. Divide each in/out degree by the total number of in-degrees for that year
 	for year, matrix in enumerate(adj_matrices):
 		# Create a networkx multi directed graph
 		G = nx.from_numpy_matrix(matrix, create_using=nx.DiGraph())
+		# Track the total number of in-degrees
+		total_in_degrees = 0
 		# Iterate through each category
 		for category in range(len(vectors[year])):
 			# Find the degrees for each category
 			total_patents = vectors[year][category]
 			in_degree = G.in_degree(category, weight='weight')
 			out_degree = G.out_degree(category, weight='weight')
+			total_in_degrees += in_degree
 
 			# Find normalized values
 			if total_patents == 0:
@@ -66,9 +73,26 @@ def calculate_degrees(adj_matrices, vectors):
 
 			# Write degree values into the list of vectors
 			unnormalized_degrees[year][category] = [out_degree, in_degree]
-			normalized_degrees[year][category] = [normalized_out_degree, normalized_in_degree]
+			normalized_degrees_1[year][category] = [normalized_out_degree, normalized_in_degree]
 
-	return unnormalized_degrees, normalized_degrees
+		# Iterate through each category again to calculate the second normalization using total number of in-degrees
+		for category in range(len(vectors[year])):
+			out_degree = unnormalized_degrees[year][category][0]
+			in_degree = unnormalized_degrees[year][category][0]
+
+			# Find normalized values
+			if total_in_degrees == 0:
+				normalized_out_degree = 0
+				normalized_in_degree = 0
+			else: 
+				normalized_out_degree = float(out_degree)/total_in_degrees
+				normalized_in_degree = float(in_degree)/total_in_degrees
+
+			# Write normalized degree values into the second normalization array
+			normalized_degrees_2[year][category] = [normalized_out_degree, normalized_in_degree]
+	print normalized_degrees_2
+
+	return unnormalized_degrees, normalized_degrees_1, normalized_degrees_2
 
 # Calculate the eigenvector centrality for the network
 def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_aggregate):
@@ -154,7 +178,7 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 			if key not in cw_dict:
 				cw_dict[key] = key
 
-	index = 8
+	index = 4
 
 	# Calculate the year indices for the years of interest
 	year_indices = [i - start_year for i in years_of_interest]
@@ -165,7 +189,7 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 	G = nx.from_numpy_matrix(a, create_using=nx.DiGraph())
 
 	# Calculate the degrees for each category in the adjacency matrices
-	unnormalized_degrees, normalized_degrees = calculate_degrees(adj_matrices, vectors)
+	unnormalized_degrees, normalized_degrees_1, normalized_degrees_2 = calculate_degrees(adj_matrices, vectors)
 
 	# Draw the graph using networkx
 	pos = nx.random_layout(G)
@@ -184,7 +208,7 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 
 	# Draw the graph using networkx
 	plt.title('Network of patents by ' + network_to_use + ' in ' + str(years_of_interest[index]))
-	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 0.001 for s in sizes], width=0.1, arrowsize=6, cmap=cmap)  # networkx draw()
+	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 25 for s in sizes], width=0.1, arrowsize=6, cmap=cmap)  # networkx draw()
 
 	# Create a legend displaying the mapping from ipc to a color
 	patchList = []
@@ -198,11 +222,12 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 		        visited_ipc.add(ipcs[i])
 
 	plt.legend(handles=patchList, loc='upper right', title='ipc8 categories')
-	plt.show(block=False)
+	plt.show()
 
 	# Save the plot to file
-	name = network_to_use + ' ' + str(years_of_interest[index])
-	plt.savefig('./network_graphs/' + name + '.png')
+	# plt.show(block=False)
+	# name = network_to_use + ' ' + str(years_of_interest[index])
+	# plt.savefig('./network_graphs/' + name + '.png')
 
 # Graphs the heatmap for the years of interest
 def graph_heatmap(adj_matrices, start_year, years_of_interest):

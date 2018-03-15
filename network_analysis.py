@@ -22,7 +22,7 @@ start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1840, 1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
-network_to_use = 'ipc108' # uspto or ipc108 or ipc8
+network_to_use = 'ipc8' # uspto or ipc108 or ipc8
 years_per_aggregate = 5 # number of years of data in each matrix/vector
 
 # Loads the vectors and adjacency matrixes
@@ -105,6 +105,26 @@ def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_agg
 		for row in transposed_rankings:
 			writer.writerow(row)
 
+	# Plot the rankings for each category over time if network_to_use is ipc8
+	if network_to_use == 'ipc8':
+		cmap = plt.cm.jet
+		colors = cmap(np.linspace(0, 1, 8))
+		rankings = {} # Dictionary where each key corresponds to a ipc8 letter and the value is a list of rankings overtime
+		years = [] # Years to be used as x axis
+		# Add rankings year by year into the rankings dictionary
+		for i in range(0, len(rankings_by_year), 2):
+			years.append(rankings_by_year[i][0])
+			ipcs_by_ranking = rankings_by_year[i][1]
+			for i, ipc in enumerate(ipcs_by_ranking):
+				if ipc not in rankings:
+					rankings[ipc] = [i+1]
+				else:
+					rankings[ipc].append(i+1)
+		# Plot the rankings for each ipc over time
+		for i, key in enumerate(rankings.iterkeys()):
+			plt.plot(years, rankings[key], colors[i])
+		plt.show()
+
 	return rankings_by_year
 
 # Graph the networks for the years of interest
@@ -113,7 +133,7 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 	# Depending on the network_to_use we are graphing, the crosswalk dictionary file we load will differ
 	# network_to_use = uspto
 	if network_to_use == 'uspto':
-		with open('./cache/uspto/cw_dictionary.msgpack', 'rb') as f:
+		with open('./cache/uspto/cw_dictionary_to_ipc8.msgpack', 'rb') as f:
 			cw_dict = msgpack.unpack(f)
 		with open('./cache/uspto/dictionary.msgpack', 'rb') as f:
 			cat_dict = msgpack.unpack(f)
@@ -134,8 +154,8 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 			if key not in cw_dict:
 				cw_dict[key] = key
 
-	index = 4
-	
+	index = 8
+
 	# Calculate the year indices for the years of interest
 	year_indices = [i - start_year for i in years_of_interest]
 	curr_year_index = year_indices[index]
@@ -148,7 +168,7 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 	unnormalized_degrees, normalized_degrees = calculate_degrees(adj_matrices, vectors)
 
 	# Draw the graph using networkx
-	pos = nx.spring_layout(G)
+	pos = nx.random_layout(G)
 	sizes = [row[1] for row in unnormalized_degrees[curr_year_index]] # In-degree for each node
 	reverse_cat_dict = {v: k for k, v in cat_dict.iteritems()}
 	categories = [reverse_cat_dict[i] for i in range(len(a))] # Category for each index in adjacency matrix
@@ -164,7 +184,7 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 
 	# Draw the graph using networkx
 	plt.title('Network of patents by ' + network_to_use + ' in ' + str(years_of_interest[index]))
-	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 25 for s in sizes], width=0.1, arrowsize=6, cmap=cmap)  # networkx draw()
+	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 0.001 for s in sizes], width=0.1, arrowsize=6, cmap=cmap)  # networkx draw()
 
 	# Create a legend displaying the mapping from ipc to a color
 	patchList = []
@@ -178,17 +198,21 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 		        visited_ipc.add(ipcs[i])
 
 	plt.legend(handles=patchList, loc='upper right', title='ipc8 categories')
-	plt.show()
+	plt.show(block=False)
+
+	# Save the plot to file
+	name = network_to_use + ' ' + str(years_of_interest[index])
+	plt.savefig('./network_graphs/' + name + '.png')
 
 # Graphs the heatmap for the years of interest
 def graph_heatmap(adj_matrices, start_year, years_of_interest):
 	# Calculate the year indices for the years of interest
 	year_indices = [i - start_year for i in years_of_interest]
-	curr_year_index = year_indices[3]
+	curr_year_index = year_indices[4]
 
 	a = matrices[curr_year_index]
-	# for i in range(len(a)):
-	# 	a[i,i] = 0
+	for i in range(len(a)):
+		a[i,i] = a[i,i] / 2
 	plt.imshow(a, cmap='hot', interpolation='nearest')
 	plt.colorbar()
 	plt.show()
@@ -215,7 +239,6 @@ graph_network(network_to_use, matrices, vectors, start_year, years_to_graph)
 # Color edge based on intensity
 # May need to halve the weights of the diagonals of each matrix, but only if degrees is called for matrix
 # -does not affect in and out degree calls
-
 
 # # TEST
 # d = np.matrix([[2,0,0],

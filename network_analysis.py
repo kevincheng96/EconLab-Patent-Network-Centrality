@@ -90,7 +90,6 @@ def calculate_degrees(adj_matrices, vectors):
 
 			# Write normalized degree values into the second normalization array
 			normalized_degrees_2[year][category] = [normalized_out_degree, normalized_in_degree]
-	print normalized_degrees_2
 
 	return unnormalized_degrees, normalized_degrees_1, normalized_degrees_2
 
@@ -178,7 +177,7 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 			if key not in cw_dict:
 				cw_dict[key] = key
 
-	index = 4
+	index = 2
 
 	# Calculate the year indices for the years of interest
 	year_indices = [i - start_year for i in years_of_interest]
@@ -191,9 +190,12 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 	# Calculate the degrees for each category in the adjacency matrices
 	unnormalized_degrees, normalized_degrees_1, normalized_degrees_2 = calculate_degrees(adj_matrices, vectors)
 
+	print unnormalized_degrees[curr_year_index]
+	print normalized_degrees_2[curr_year_index]
+
 	# Draw the graph using networkx
 	pos = nx.random_layout(G)
-	sizes = [row[1] for row in unnormalized_degrees[curr_year_index]] # In-degree for each node
+	sizes = [row[1] for row in normalized_degrees_2[curr_year_index]] # In-degree for each node
 	reverse_cat_dict = {v: k for k, v in cat_dict.iteritems()}
 	categories = [reverse_cat_dict[i] for i in range(len(a))] # Category for each index in adjacency matrix
 	# Generate colors and map each ipc8 category to a distinct color
@@ -208,7 +210,7 @@ def graph_network(network_to_use, adj_matrices, vectors, start_year, years_of_in
 
 	# Draw the graph using networkx
 	plt.title('Network of patents by ' + network_to_use + ' in ' + str(years_of_interest[index]))
-	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 25 for s in sizes], width=0.1, arrowsize=6, cmap=cmap)  # networkx draw()
+	nx.draw(G, pos=pos, with_labels=False, node_color=ipc_colors, node_size=[s * 10000 for s in sizes], width=0.1, arrowsize=6, cmap=cmap)  # networkx draw()
 
 	# Create a legend displaying the mapping from ipc to a color
 	patchList = []

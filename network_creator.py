@@ -169,7 +169,7 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 							else:
 								continue
 						# If citing patent is filed more than fyear_gap years after the cited patent, ignore
-						elif cit_fyear - fyear  - 1 > fyear_gap or cit_fyear - fyear <= 0:
+						if cit_fyear - fyear  - 1 > fyear_gap or cit_fyear - fyear <= 0:
 							continue
 						else:
 							# Add entry into adjacency matrix
@@ -302,5 +302,5 @@ apply_crosswalk(num_classes)
 # Category web network where the same ipc_8 patents have the same color (Done)
 # Normalize by the total number of in-degrees for each year instead
 # Graph rankings over time (y-axis: rank)
-# Figure out why plots for earlier years are blank
+# Figure out why plots for earlier years are blank (Apparently the matrices for earlier years are empty even though vectors are not)
 # Graph pagerank rankings (y-axis: 0-100 to show intensity)

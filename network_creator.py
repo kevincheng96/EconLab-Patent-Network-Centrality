@@ -300,7 +300,9 @@ apply_crosswalk(num_classes)
 # Output CSV (Done)
 # Heatmap (Done)
 # Category web network where the same ipc_8 patents have the same color (Done)
-# Normalize by the total number of in-degrees for each year instead
-# Graph rankings over time (y-axis: rank)
-# Figure out why plots for earlier years are blank (Apparently the matrices for earlier years are empty even though vectors are not)
-# Graph pagerank rankings (y-axis: 0-100 to show intensity)
+# Normalize by the total number of in-degrees for each year instead (Done)
+# Graph rankings over time (y-axis: rank) (Done)
+# Figure out why plots for earlier years are blank (Apparently the matrices for earlier years are empty even though vectors are not) (Done)
+# Graph pagerank rankings (y-axis: 0-100 to show intensity) (Done)
+# Find a way to graph norm1 (since the sizes are disproprtionate)
+# Graph heatmaps and fix diagonals

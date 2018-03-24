@@ -5,6 +5,7 @@ import numpy as np
 import msgpack
 import msgpack_numpy as m
 import networkx as nx
+import matplotlib.colors as mplColors
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import csv
@@ -22,9 +23,9 @@ start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1840, 1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
-network_to_use = 'ipc8' # uspto or ipc108 or ipc8
+network_to_use = 'ipc108' # uspto or ipc108 or ipc8
 years_per_aggregate = 5 # number of years of data in each matrix/vector
-normalization_choice = 'norm1' # Normalization choice for network degrees (norm1 or norm2)
+normalization_choice = 'norm2' # Normalization choice for network degrees (norm2 by default, norm1 is still a work in progress)
 ipc8_to_category_name = {
 	'a': 'Human Necessities',
 	'b': 'Performing Operations',
@@ -104,8 +105,9 @@ def calculate_degrees(adj_matrices, vectors):
 
 	return unnormalized_degrees, normalized_degrees_1, normalized_degrees_2
 
-# Calculate the eigenvector centrality for the network
-def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_aggregate):
+# Plots the eigenvector centrality rankings for the network over time and generates a csv file of these rankings
+# NOTE: Plotting only enabled for ipc8
+def plot_eigenvector_centrality_rankings(network_to_use, adj_matrices, years_per_aggregate):
 	# List to be populated with centrality measures for each year
 	rankings_by_year = []
 
@@ -132,7 +134,7 @@ def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_agg
 	years = [x[0] for x in rankings_by_year] # Extract the years to form the first row
 	rankings = [x[1] for x in rankings_by_year] # Extract rankings
 	transposed_rankings = zip(*rankings)
-	f_name = './cache/' + network_to_use + '/eigenvector_rankings_' + str(years_per_aggregate) + 'year_aggregates.csv'
+	f_name = './outputs/csv/eigenvector_rankings/' + network_to_use + '/eigenvector_rankings_' + str(years_per_aggregate) + 'year_aggregates.csv'
 	with open(f_name, 'wb') as f:
 		writer = csv.writer(f)
 		writer.writerow(years)
@@ -155,6 +157,7 @@ def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_agg
 				else:
 					rankings[ipc].append(i+1)
 		# Plot the rankings for each ipc over time and create a legend
+		plt.figure()
 		patchList = []
 		for i, key in enumerate(rankings.iterkeys()):
 			# Plot the ranking for this ipc8
@@ -172,13 +175,14 @@ def calculate_eigenvector_centrality(network_to_use, adj_matrices, years_per_agg
 
 		# Save the plot to file
 		plt.show(block=False)
-		name = 'eigenvector_centrality_rankings_over_time'
-		plt.savefig('./generated_plots/' + name + '.png', bbox_inches='tight')
+		name = 'eigenvector_centrality_rankings_over_time_' + str(years_per_aggregate) + '_year_aggregates'
+		plt.savefig('./outputs/generated_plots/centrality_plots/eigenvector/' + name + '.png', bbox_inches='tight')
 
 	return rankings_by_year
 
-# Calculate the Pagerank centrality for the network
-def calculate_pagerank_centrality(network_to_use, adj_matrices, years_per_aggregate):
+# Plots the Pagerank centrality vakues for the network over time and generates a csv file of these rankings
+# NOTE: Plotting only enabled for ipc8
+def plot_pagerank_centrality_rankings(network_to_use, adj_matrices, years_per_aggregate):
 	# List to be populated with pagerank measures for each year
 	rankings_by_year = []
 
@@ -206,7 +210,7 @@ def calculate_pagerank_centrality(network_to_use, adj_matrices, years_per_aggreg
 	years = [x[0] for x in rankings_by_year] # Extract the years to form the first row
 	rankings = [x[1] for x in rankings_by_year] # Extract rankings
 	transposed_rankings = zip(*rankings)
-	f_name = './cache/' + network_to_use + '/pagerank_rankings_' + str(years_per_aggregate) + 'year_aggregates.csv'
+	f_name = './outputs/csv/pagerank_rankings/' + network_to_use + '/pagerank_rankings_' + str(years_per_aggregate) + 'year_aggregates.csv'
 	with open(f_name, 'wb') as f:
 		writer = csv.writer(f)
 		writer.writerow(years)
@@ -230,6 +234,7 @@ def calculate_pagerank_centrality(network_to_use, adj_matrices, years_per_aggreg
 				else:
 					pagerank_values_overtime[ipc].append(pagerank_values[i] * 100)
 		# Plot the Pagerank values for each ipc over time and create a legend
+		plt.figure()
 		patchList = []
 		for i, key in enumerate(pagerank_values_overtime.iterkeys()):
 			# Plot the ranking for this ipc8
@@ -246,8 +251,8 @@ def calculate_pagerank_centrality(network_to_use, adj_matrices, years_per_aggreg
 
 		# Save the plot to file
 		plt.show(block=False)
-		name = 'pagerank_centrality_values_over_time'
-		plt.savefig('./generated_plots/' + name + '.png', bbox_inches='tight')
+		name = 'pagerank_centrality_values_over_time_' + str(years_per_aggregate) + '_year_aggregates'
+		plt.savefig('./outputs/generated_plots/centrality_plots/pagerank/'+ name + '.png', bbox_inches='tight')
 
 	return rankings_by_year
 
@@ -335,22 +340,73 @@ def graph_network(network_to_use, adj_matrices, vectors):
 
 		# Save the plot to file
 		plt.show(block=False)
-		fpath = './generated_plots/network_graphs/' + normalization_choice + '/' + network_to_use + '/'
+		fpath = './outputs/generated_plots/network_graphs/' + normalization_choice + '/' + network_to_use + '/'
 		fname = network_to_use + ' ' + str(curr_year) + '.png'
 		plt.savefig(fpath + fname, bbox_inches='tight')
+
+# Generates a csv file of the rankings for each patent category base on in-degrees over time
+def generate_in_degrees_ranking_csv(network_to_use, adj_matrices, vectors, years_per_aggregate):
+	# List to be populated with in-degree rankings for each year
+	rankings_by_year = []
+
+	# Calculate the degrees for each category in the adjacency matrices
+	unnormalized_degrees, normalized_degrees_1, normalized_degrees_2 = calculate_degrees(adj_matrices, vectors)
+	# Extract only unnormalized in-degrees
+	in_degrees = []
+	for yearly_degrees in unnormalized_degrees:
+		in_degrees.append([degrees[0] for degrees in yearly_degrees])
+	in_degrees = np.asarray(in_degrees) # Convert to numpy array
+
+	# Aggregate the in-degrees together 
+	aggregated_in_degrees = aggregate_years(in_degrees, years_per_aggregate)
+
+	# Loop through each in-degree vector and rank them 
+	for i, vector in enumerate(aggregated_in_degrees):
+		curr_year = start_year + i * years_per_aggregate
+		# Maps vector index value to a uspto value
+		reverse_uspto_dict = {v: k for k, v in cat_dict.iteritems()}
+		# Create a list of rankings, where those with the most in-degrees are first
+		rankings = [[reverse_uspto_dict[k], v] for k, v in enumerate(vector)]
+		rankings = sorted(rankings, key = lambda x: x[1])[::-1] # Sort by value
+		# Add 2 entries to the rankings_by_year array (one for the patent name, other for eigenvalue)
+		rankings_by_year.append((curr_year, [x[0] for x in rankings]))
+		rankings_by_year.append((curr_year, [x[1] for x in rankings]))
+
+	# Write into a csv file
+	years = [x[0] for x in rankings_by_year] # Extract the years to form the first row
+	rankings = [x[1] for x in rankings_by_year] # Extract rankings
+	transposed_rankings = zip(*rankings)
+	f_name = './outputs/csv/in_degree_rankings/' + network_to_use + '/in_degree_rankings_' + str(years_per_aggregate) + 'year_aggregates.csv'
+	with open(f_name, 'wb') as f:
+		writer = csv.writer(f)
+		writer.writerow(years)
+		for row in transposed_rankings:
+			writer.writerow(row)
+
 
 # Graphs the heatmap for the years of interest
 def graph_heatmap(adj_matrices):
 	# Calculate the year indices for the years of interest
 	year_indices = [i - start_year for i in years_to_graph]
-	curr_year_index = year_indices[4]
 
-	a = adj_matrices[curr_year_index]
-	# for i in range(len(a)):
-	# 	a[i,i] = a[i,i] / 2
-	plt.imshow(a, cmap='hot', interpolation='nearest')
-	plt.colorbar()
-	plt.show()
+	# Loop through each of the years of interest and generate its network graph
+	for year_index in year_indices:
+		# Current year
+		curr_year = start_year + year_index
+
+		a = adj_matrices[year_index]
+
+		# The heatmap is created using a logarithmic color scale to better view the density
+		plt.figure()
+		plt.imshow(a, cmap='hot', interpolation='nearest', norm=mplColors.SymLogNorm(10**-1))
+		plt.colorbar()
+		plt.title('Heatmap of ' + network_to_use + ' citations in ' + str(curr_year))
+
+		# Save the plot to file
+		plt.show(block=False)
+		fpath = './outputs/generated_plots/heatmaps/' + network_to_use + '/'
+		fname = network_to_use + ' ' + str(curr_year) + '.png'
+		plt.savefig(fpath + fname)
 
 # Aggregate the matrices or vectors for every x years
 # ex. aggregate every 5 years worth of data
@@ -360,15 +416,17 @@ def aggregate_years(array, years_per_aggregate):
 # First load the serialized vectors and matrices
 vectors, matrices, cat_dict = load_network(network_to_use)
 
-# calculate_eigenvector_centrality(network_to_use, matrices, years_per_aggregate)
+plot_eigenvector_centrality_rankings(network_to_use, matrices, years_per_aggregate)
 
-calculate_pagerank_centrality(network_to_use, matrices, years_per_aggregate)
+plot_pagerank_centrality_rankings(network_to_use, matrices, years_per_aggregate)
+
+generate_in_degrees_ranking_csv(network_to_use, matrices, vectors, years_per_aggregate)
 
 # Graph the networks for some years
-# graph_network(network_to_use, matrices, vectors)
+graph_network(network_to_use, matrices, vectors)
 
 # Graph heatmap
-# graph_heatmap(matrices)
+graph_heatmap(matrices)
 
 # TODO:
 # Work on graphing

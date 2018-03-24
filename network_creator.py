@@ -304,5 +304,10 @@ apply_crosswalk(num_classes)
 # Graph rankings over time (y-axis: rank) (Done)
 # Figure out why plots for earlier years are blank (Apparently the matrices for earlier years are empty even though vectors are not) (Done)
 # Graph pagerank rankings (y-axis: 0-100 to show intensity) (Done)
-# Find a way to graph norm1 (since the sizes are disproprtionate)
-# Graph heatmaps and fix diagonals
+# Find a way to graph norm1 (since the sizes are disproportionate)
+# Graph heatmaps and fix diagonals (Done)
+# Generate CSV for centrality ranking/page rank plots (Done)
+# Generate CSV of rankings for in-degrees for ipc108 (year, in-degree, ipc108) (Done)
+# Aggregate by 10 years, then do plots  (Done)
+# Add ipc labels for ipc8 heatmap
+# For in-degree CSV, add in ipc108 name as a column

@@ -289,10 +289,6 @@ apply_crosswalk(num_classes)
 
 
 # TODO:
-# -Disregard entries with non integer uspto values
-# 	-Preferably drop this in retrieve_patent_data
-# -Make sure all uspto and ipc are strings
-
 # if fyear is missing, use iyear (Done)
 # crosswalk, skip over bad uspto numbers (Done)
 # create 5 year aggregate (Done)

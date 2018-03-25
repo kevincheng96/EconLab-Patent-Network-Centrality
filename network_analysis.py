@@ -23,7 +23,7 @@ start_year = 1835 # Default: 1835
 end_year = 2015 # Default 2015
 year_gap = 10
 years_to_graph = [1840, 1860, 1880, 1900, 1920, 1940, 1960, 1980, 2000]
-network_to_use = 'ipc108' # uspto or ipc108 or ipc8
+network_to_use = 'uspto' # uspto or ipc108 or ipc8
 years_per_aggregate = 5 # number of years of data in each matrix/vector
 normalization_choice = 'norm2' # Normalization choice for network degrees (norm2 by default, norm1 is still a work in progress)
 ipc8_to_category_name = {
@@ -416,10 +416,13 @@ def aggregate_years(array, years_per_aggregate):
 # First load the serialized vectors and matrices
 vectors, matrices, cat_dict = load_network(network_to_use)
 
+# Plot rankings for each patent category based on its eigenvector centrality measure
 plot_eigenvector_centrality_rankings(network_to_use, matrices, years_per_aggregate)
 
+# Plot the PageRank values for each patenet category
 plot_pagerank_centrality_rankings(network_to_use, matrices, years_per_aggregate)
 
+# Generate a CSV displaying the rankings for each patent category based on its in-degrees
 generate_in_degrees_ranking_csv(network_to_use, matrices, vectors, years_per_aggregate)
 
 # Graph the networks for some years
@@ -427,40 +430,3 @@ graph_network(network_to_use, matrices, vectors)
 
 # Graph heatmap
 graph_heatmap(matrices)
-
-# TODO:
-# Work on graphing
-# Graphviz
-# Color edge based on intensity
-# May need to halve the weights of the diagonals of each matrix, but only if degrees is called for matrix
-# -does not affect in and out degree calls
-
-# # TEST
-# d = np.matrix([[2,0,0],
-# 			   [0,0,0],
-# 			   [5,0,0]])
-# G = nx.from_numpy_matrix(d, create_using=nx.DiGraph())
-# print d
-# print G
-
-# print G.in_degree([0,1,2], weight='weight')
-# print G.out_degree([0,1,2], weight='weight')
-
-# # Draw the graph using networkx
-# pos = nx.spring_layout(G)
-# cmap = plt.cm.jet
-# values = dict(nx.degree(G, weight='weight')) # In-degree for each node
-# print values
-# nx.draw(G, pos=pos, with_labels=True, node_color=[v * 25 for v in values.values()], node_size=[v * 25 for v in values.values()], cmap=cmap)  # networkx draw()
-# write_dot(G,'graph.dot')
-
-# # Set color bar
-# sm = plt.cm.ScalarMappable(cmap=cmap)
-# sm._A = []
-# sm.set_clim(vmin=min(values.values()), vmax=max(values.values()))
-# plt.colorbar(sm, shrink=0.7)
-# print(max(values))
-# print(min(values))
-
-# plt.show()  # pyplot draw()
-

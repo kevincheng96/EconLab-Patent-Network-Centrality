@@ -47,7 +47,7 @@ def load_network(network_to_use):
 			cat_dict = msgpack.unpack(f)
 	return vectors, matrices, cat_dict
 
-# Calculate in and out degrees for all the categories in the network over time
+# Calculate in and out degrees (both unnormalized and normalized) for all the categories in the network over time
 def calculate_degrees(adj_matrices, vectors):
 	# Initialize the unnormalized and normalized in and out degree vectors
 	# Each is a list of vectors for each year, where index of vector is the category index

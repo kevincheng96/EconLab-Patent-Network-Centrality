@@ -191,7 +191,8 @@ def create_vector_and_matrix(patents, start_year, end_year, fyear_gap):
 
 	print vectors, matrices
 
-# Converts the adjacency matrix and vector from 430+ categories to less categories using the crosswalk data
+# Converts the adjacency matrix and vector from 430+ uspto categories to less categories using the crosswalk data
+# Note: Converts to ipc8 if num_classes=='few' and ipc108 if num_classes=='many'
 def apply_crosswalk(num_classes):
 	# Read in existing data
 	with open('./cache/uspto/vectors.msgpack', 'rb') as f:
@@ -278,14 +279,11 @@ def apply_crosswalk(num_classes):
 
 	return
 
-# Define variables
 patents = retrieve_patent_data() # Dictionary of format: {patnum: {fyear: int, main_uspto: int}}
 
-# create_vector_and_matrix(patents, start_year, end_year, year_gap)
+create_vector_and_matrix(patents, start_year, end_year, year_gap)
 
 apply_crosswalk(num_classes)
-
-# create_uspto_dict(patents)
 
 
 # TODO:

@@ -27,6 +27,9 @@ This file loads in all the original patent citation data and processes them to c
 
 At the top of the file are some parameters that can be changed, such as the starting year and the ending year for generating these network matrices and vectors. The year_gap parameter is used to specify how many years of future citing patents should be considered as linked to a patent. 
 
-Note that this file should only be called once (every time parameters are changed), as the outputs are serialized as msgpack files and saved in the cache folder. Generating these adjacency matrices and vectors can take a long time due to the sheer size of the input data.
+Note that this file should be called first before network_analysis.py is called. It also should only be called once (every time parameters are changed), as the outputs are serialized as msgpack files and saved in the cache folder. Generating these adjacency matrices and vectors can take a long time due to the sheer size of the input data.
 
 ### network_analysis.py
+This file reads in the processed data saved in "cache" and creates centrality rankings, network graphs, and heatmaps. These figures are outputted to the "outputs" folder.
+
+Similar to network_creator.py, this script has parameters that can be adjusted at the top of the file. There are the starting year, ending year, and year_gap parameter that have been described in network_creator.py. The years_to_graph variable is a list containing the years of interest to graph in the network graphs and heatmaps. The network_to_use variable indicates whether the network to be graphed should be for the uspto, ipc108, or ipc8 category. Finally, the years_per_aggregate variable indicates how many consecutive years should be aggregated together when plotting the centrality rankings. A higher number of years to aggregate by will result in rankings that are less noisy.

@@ -33,3 +33,8 @@ Note that this file should be called first before network_analysis.py is called.
 This file reads in the processed data saved in "cache" and creates centrality rankings, network graphs, and heatmaps. These figures are outputted to the "outputs" folder.
 
 Similar to network_creator.py, this script has parameters that can be adjusted at the top of the file. There are the starting year, ending year, and year_gap parameter that have been described in network_creator.py. The years_to_graph variable is a list containing the years of interest to graph in the network graphs and heatmaps. The network_to_use variable indicates whether the network to be graphed should be for the uspto, ipc108, or ipc8 category. Finally, the years_per_aggregate variable indicates how many consecutive years should be aggregated together when plotting the centrality rankings. A higher number of years to aggregate by will result in rankings that are less noisy.
+
+## Running the code
+If the cache folder is empty, that means the original data has not been processed by the "network_creator.py" yet. So, you should run the "network_creator.py" first to generate the adjacency matrices and vectors for the patent network. A crosswalk dictionary that links uspto categories to ipc categories will also be generated.
+
+Now that the cache folder has been populated with processed data, the "network_analysis.py" file can be called. There are multiple functions in this file that can be called to output centrality ranking plots over time, centrality network graphs, centrality heatmaps, and centrality rankings csvs. Each function is commented heavily in the code.
